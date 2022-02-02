@@ -48,7 +48,7 @@ class _CouponListState extends BaseScreen<CouponList> {
       RefreshController(initialRefresh: false);
 
   @override
-  void afterFirstLayout(BuildContext context) {
+  Future<void> afterFirstLayout(BuildContext context) async {
     if (widget.couponCode != null) {
       setState(() {
         _couponTextController.text = widget.couponCode!;
@@ -62,14 +62,13 @@ class _CouponListState extends BaseScreen<CouponList> {
     setState(() {
       isFetching = true;
     });
-    services.api.getCoupons()!.then((coupons) {
-      coupons.coupons.forEach((Coupon coupon) {
-        _couponsMap[coupon.id] = coupon;
-      });
-      setState(() {
-        isFetching = false;
-      });
-      _displayCoupons(context);
+    final cachedCoupons = widget.coupons ?? await services.api.getCoupons();
+    cachedCoupons!.coupons.forEach((Coupon coupon) {
+      _couponsMap[coupon.id] = coupon;
+    });
+    _displayCoupons(context);
+    setState(() {
+      isFetching = false;
     });
   }
 
@@ -80,9 +79,10 @@ class _CouponListState extends BaseScreen<CouponList> {
     final bool showAllCoupons = kAdvanceConfig['ShowAllCoupons'] ?? false;
     final bool showExpiredCoupons =
         kAdvanceConfig['ShowExpiredCoupons'] ?? false;
+    
 
-    // final searchQuery = _couponTextController.text.toLowerCase();
-    final searchQuery = '${_couponTextController.text}App'.toLowerCase(); // My
+    final searchQuery = _couponTextController.text.toLowerCase();
+    // final searchQuery = '${_couponTextController.text}App'.toLowerCase(); // My
 
     coupons.retainWhere((c) {
       var shouldKeep = true;
@@ -121,6 +121,8 @@ class _CouponListState extends BaseScreen<CouponList> {
 
       return shouldKeep;
     });
+
+    print("RETAINED COUPONS: ${coupons.map((c) => c.code).toList()}");
 
     // _coupons.sort((a, b) => b.emailRestrictions.contains(email) ? 0 : -1);
 
